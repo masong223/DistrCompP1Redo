@@ -50,7 +50,7 @@ class Client extends Thread {
                 } else if (command.equals("put")) {
                     put();
                 } else if (command.equals("delete")) {
-                    delete();
+                    delete(commandParts[1], byteOut); //Passes arg (file to delete) to delete
                 } else if (command.equals("ls")) {
                     ls(byteOut);
                 } else if (command.equals("cd")) {
@@ -74,8 +74,19 @@ class Client extends Thread {
     void put() {
 
     }
-    void delete() {
-
+    void delete(String filePathToDelete, DataOutputStream byteOut) throws IOException {
+        File fileToDelete = new File(cwd, filePathToDelete);
+        if (fileToDelete.exists()) {
+            boolean isDeleted = fileToDelete.delete(); //Method returns boolean after calling
+            if (isDeleted) {
+                byteOut.writeUTF("File deleted");
+            } else {
+                byteOut.writeUTF("Failed to delete file");
+            }
+        } else {
+            byteOut.writeUTF("File does not exist"); //Means that the either the system couldnt find the file or it doesnt exist
+        }
+        byteOut.flush();
     }
     void ls(DataOutputStream out) throws IOException {
         File[] filesinCwd = cwd.listFiles(); //Gets list of files in cwd
@@ -91,19 +102,21 @@ class Client extends Thread {
         out.flush();
     }
     void cd(String newDirectory, DataOutputStream byteOut) throws IOException {
-        File dirToGoTo; 
+        File dirToGoTo;
         if (newDirectory.equals("..")) {
             dirToGoTo = cwd.getParentFile().getCanonicalFile(); //Goes up to parent
             if (dirToGoTo == null) {
                 dirToGoTo = cwd.getCanonicalFile(); //If there is no parent, stay in same directory
-                byteOut.writeUTF("Directory changed to " + cwd.getCanonicalPath());
+                byteOut.writeUTF("Directory not changed: " + cwd.getCanonicalPath());
             }
+            cwd = dirToGoTo; //Changes cwd to new directory
+            byteOut.writeUTF("Directory changed to " + cwd.getCanonicalPath()); //Confirmation message FOR TESTING
         } else if (newDirectory.equals(".")) {
             return; //Stays in same directory, no action needed
         }
             else {
                 dirToGoTo = new File(cwd, newDirectory); //Creates path to new directory
-                if (dirToGoTo.exists() && dirToGoTo.isDirectory()) {
+                if (dirToGoTo.exists() && dirToGoTo.isDirectory()) { //Don't want to cd to a file :(
                     cwd = dirToGoTo; //Changes cwd to new directory
                     cwd = cwd.getCanonicalFile(); //Gets rid of .. and . in the path
                     byteOut.writeUTF("Directory changed to " + cwd.getCanonicalPath()); //Confirmation message FOR TESTING
@@ -111,6 +124,7 @@ class Client extends Thread {
                     byteOut.writeUTF("Directory does not exist");
                 }
         }
+        byteOut.flush();
     }
     void mkdir(String newDirName, DataOutputStream byteOut) throws IOException {
         File newDir = new File(cwd, newDirName); //Creates path to new directory
@@ -130,8 +144,5 @@ class Client extends Thread {
     void pwd(DataOutputStream byteOut) throws IOException {
         byteOut.writeUTF(cwd.getCanonicalPath());
         byteOut.flush();
-    }
-    void quit() {
-
     }
 }
