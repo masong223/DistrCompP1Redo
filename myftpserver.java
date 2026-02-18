@@ -52,22 +52,20 @@ class Client extends Thread {
                 } else if (command.equals("delete")) {
                     delete();
                 } else if (command.equals("ls")) {
-                    ls();
+                    ls(byteOut);
                 } else if (command.equals("cd")) {
-                    cd();
+                    cd(commandParts[1], byteOut); //Passes arg (directory) to cd
                 } else if (command.equals("mkdir")) {
-                    mkdir();
+                    mkdir(commandParts[1], byteOut); //Passes arg (directory) to mkdir
                 } else if (command.equals("pwd")) {
                     pwd(byteOut);
-                } else if (command.equals("quit")) {
-                    break; //Exit program
                 } else {
                     byteOut.writeUTF("Invalid command");
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("Error with client connection / COMMANDS");
+            //Only happens when client disconnects
+            System.err.println("Client disconnected");
         }
     }
     void get() {
@@ -79,13 +77,54 @@ class Client extends Thread {
     void delete() {
 
     }
-    void ls() {
-
+    void ls(DataOutputStream out) throws IOException {
+        File[] filesinCwd = cwd.listFiles(); //Gets list of files in cwd
+        StringBuilder message = new StringBuilder(); //Allows us to send one message to client instead of multiple
+        for (File file : filesinCwd) {
+            if (file.isDirectory()) {
+                message.append(file.getName()).append("/ "); //Adds / to end of directories
+            } else {
+                message.append(file.getName()).append(" ");
+            }
+        }
+        out.writeUTF(message.toString());
+        out.flush();
     }
-    void cd() {
-
+    void cd(String newDirectory, DataOutputStream byteOut) throws IOException {
+        File dirToGoTo; 
+        if (newDirectory.equals("..")) {
+            dirToGoTo = cwd.getParentFile().getCanonicalFile(); //Goes up to parent
+            if (dirToGoTo == null) {
+                dirToGoTo = cwd.getCanonicalFile(); //If there is no parent, stay in same directory
+                byteOut.writeUTF("Directory changed to " + cwd.getCanonicalPath());
+            }
+        } else if (newDirectory.equals(".")) {
+            return; //Stays in same directory, no action needed
+        }
+            else {
+                dirToGoTo = new File(cwd, newDirectory); //Creates path to new directory
+                if (dirToGoTo.exists() && dirToGoTo.isDirectory()) {
+                    cwd = dirToGoTo; //Changes cwd to new directory
+                    cwd = cwd.getCanonicalFile(); //Gets rid of .. and . in the path
+                    byteOut.writeUTF("Directory changed to " + cwd.getCanonicalPath()); //Confirmation message FOR TESTING
+                } else {
+                    byteOut.writeUTF("Directory does not exist");
+                }
+        }
     }
-    void mkdir() {
+    void mkdir(String newDirName, DataOutputStream byteOut) throws IOException {
+        File newDir = new File(cwd, newDirName); //Creates path to new directory
+        if (newDir.exists()) {
+            byteOut.writeUTF("Directory already exists");
+        } else {
+            boolean isCreated = newDir.mkdir();
+            if (isCreated) {
+                byteOut.writeUTF("Directory created");
+            } else {
+                byteOut.writeUTF("Failed to create directory");
+            }
+        }
+        byteOut.flush();
 
     }
     void pwd(DataOutputStream byteOut) throws IOException {

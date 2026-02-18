@@ -1,5 +1,6 @@
 import java.io.*;
 import java.net.*;
+import java.util.Scanner;
 
 public static void main(String[] args) {
     String machineName = args[0];
@@ -10,14 +11,17 @@ public static void main(String[] args) {
     DataInputStream in = new DataInputStream(socket.getInputStream());
     DataOutputStream out = new DataOutputStream(socket.getOutputStream());
     System.out.println("Connected to server and established I/O"); //Testing connection to server
-
+    Scanner scanner = new Scanner(System.in);
     while (true) {
         System.out.print("myftp> ");
-        String input = in.readUTF();
-        if (input.equals("quit")) {
+        String inputToServer = scanner.nextLine();
+        if (inputToServer.equals("quit")) {
             break;
         }
-        out.writeUTF(input);
+        out.writeUTF(inputToServer);
+        out.flush();
+        String response = in.readUTF();
+        System.out.println(response);
     }
 
     } catch (IOException e) {
