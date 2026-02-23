@@ -1,6 +1,7 @@
 import java.io.*;
 import java.net.*;
 
+
 public class myftpserver {
 public static void main(String[] args) {
     int port = Integer.parseInt(args[0]);
@@ -46,9 +47,9 @@ class Client extends Thread {
                 String command = commandParts[0]; //Gets command from user input
 
                 if (command.equals("get")) {
-                    get();
+                    get(byteOut, commandParts[1]); //Passes arg (file to get) to get
                 } else if (command.equals("put")) {
-                    put();
+                    put(byteOut, dataIn, commandParts[1]); //Passes input and output streams to put so it can read file data from client and write file data to client
                 } else if (command.equals("delete")) {
                     delete(commandParts[1], byteOut); //Passes arg (file to delete) to delete
                 } else if (command.equals("ls")) {
@@ -68,12 +69,49 @@ class Client extends Thread {
             System.err.println("Client disconnected");
         }
     }
-    void get() {
+    void get(DataOutputStream byteOut, String filename) throws IOException{
+        File fileToSend = new File (cwd, filename);
+        if (!fileToSend.exists()) {
+            byteOut.writeUTF("File does not exist");
+            byteOut.flush();
+            return;
+        } //checking if file exists
+
+        byteOut.writeUTF(fileToSend.getName());
+        byteOut.flush();       // file name
+
+        long fileSize = fileToSend.length();
+        byteOut.writeLong(fileSize); // file size
+        int size = (int) fileSize;
+        byte[] payload = new byte[size]; 
+
+        try (FileInputStream fileIn = new FileInputStream(fileToSend)) {         
+            fileIn.read(payload);
+            byteOut.write(payload);
+            byteOut.flush();
+        } catch (IOException e) {
+            byteOut.writeUTF("Error when turning file into byte array");
+            byteOut.flush();
+        }
 
     }
-    void put() {
 
+    void put(DataOutputStream byteOut, DataInputStream byteIn, String fileName) throws IOException {
+        System.out.println("Put command received"); //Testing put command
+        long fileSize = byteIn.readLong();
+        System.out.println(fileSize);
+        File fileToWrite = new File(cwd, fileName);
+        try (FileOutputStream fileOut = new FileOutputStream(fileToWrite)) {
+            byte[] payLoad = new byte [(int) fileSize];
+            byteIn.readFully(payLoad);
+            fileOut.write(payLoad);
+            fileOut.flush();
+        } catch (IOException e) {
+            System.out.println("Server error creating file");
+        }
     }
+
+
     void delete(String filePathToDelete, DataOutputStream byteOut) throws IOException {
         File fileToDelete = new File(cwd, filePathToDelete);
         if (fileToDelete.exists()) {
