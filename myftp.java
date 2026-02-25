@@ -5,27 +5,32 @@ import java.util.Scanner;
 public class myftp {
     public static void main(String[] args) {
         String machineName = args[0];
-        int port = Integer.parseInt(args[1]);
+        int nport = Integer.parseInt(args[1]);
+        int tport = Integer.parseInt(args[2]);
 
         try {
-            Socket socket = new Socket(machineName, port);
-            DataInputStream in = new DataInputStream(socket.getInputStream());
-            DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+            Socket nsocket = new Socket(machineName, nport);
+            Socket tsocket = new Socket(machineName, tport);
+            DataInputStream nIn = new DataInputStream(nsocket.getInputStream());
+            DataOutputStream nOut = new DataOutputStream(nsocket.getOutputStream());
+            DataInputStream tIn = new DataInputStream(tsocket.getInputStream());
+            DataOutputStream tOut = new DataOutputStream(tsocket.getOutputStream());
             System.out.println("Connected to server and established I/O"); // Testing connection to server
             Scanner scanner = new Scanner(System.in);
             while (true) {
                 System.out.print("myftp> ");
                 String inputToServer = scanner.nextLine();
                 if (inputToServer.equals("quit")) {
-                    socket.close();
+                    nsocket.close();
+                    tsocket.close();
                     scanner.close();
                     break;
-                }
-
-                 else if (inputToServer.startsWith("get")) {
-                    out.writeUTF(inputToServer); // maybe
-                    out.flush();
-                    String serverResponse = in.readUTF();
+                } else if (inputToServer.startsWith("terminate")){
+                    //terminate command 
+                }  else if (inputToServer.startsWith("get")) {
+                    nOut.writeUTF(inputToServer); // maybe
+                    nOut.flush();
+                    String serverResponse = nIn.readUTF();
                     if (serverResponse.equals("File does not exist")) {
                         System.out.println(serverResponse);
                         continue; //Exit and wait for another command if file doesn't exist
@@ -33,13 +38,13 @@ public class myftp {
                     String filename = serverResponse; // file name if it exists 
                     System.out.println(filename); // Testing response from server
 
-                    long fileSize = in.readLong(); // file size
+                    long fileSize = nIn.readLong(); // file size
                     System.out.println(fileSize);
 
                     // Testing file path for get command
                     try (FileOutputStream fileOut = new FileOutputStream(filename)) {
                         byte[] payload = new byte[(int) fileSize];
-                        in.readFully(payload); // getting data from server
+                        nIn.readFully(payload); // getting data from server
 
                         fileOut.write(payload); // writing data to file
                         fileOut.flush();
@@ -58,22 +63,22 @@ public class myftp {
                         System.out.println("File does not exist");
                         continue;
                     } // file exists
-                    out.writeUTF(inputToServer);
-                    out.flush();
-                    out.writeLong(fileToSend.length());
-                    out.flush();
+                    nOut.writeUTF(inputToServer);
+                    nOut.flush();
+                    nOut.writeLong(fileToSend.length());
+                    nOut.flush();
                     try (FileInputStream fileIn = new FileInputStream(fileName)) {
                         byte[] payLoad = new byte[(int) fileToSend.length()];
                         fileIn.read(payLoad);
-                        out.write(payLoad);
-                        out.flush();
+                        nOut.write(payLoad);
+                        nOut.flush();
                     } catch (IOException e) {
                         System.out.println("Error client reading file");
                     }
                 } else { //If command is not quit, put, or get
-                    out.writeUTF(inputToServer);
-                    out.flush();
-                    String responseFromServer = in.readUTF();
+                    nOut.writeUTF(inputToServer);
+                    nOut.flush();
+                    String responseFromServer = nIn.readUTF();
                     System.out.println(responseFromServer);
                 }
                 
