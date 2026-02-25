@@ -146,10 +146,12 @@ class Client extends Thread {
             if (dirToGoTo == null) {
                 dirToGoTo = cwd.getCanonicalFile(); //If there is no parent, stay in same directory
                 byteOut.writeUTF("Directory not changed: " + cwd.getCanonicalPath());
+            } else { 
+                cwd = dirToGoTo; //Changes cwd to new directory
+                byteOut.writeUTF("Directory changed to " + cwd.getCanonicalPath()); 
             }
-            cwd = dirToGoTo; //Changes cwd to new directory
-            byteOut.writeUTF("Directory changed to " + cwd.getCanonicalPath()); //Confirmation message FOR TESTING
         } else if (newDirectory.equals(".")) {
+            byteOut.writeUTF("Directory not changed: " + cwd.getCanonicalPath()); //Has to send something so the client doesn't hang
             return; //Stays in same directory, no action needed
         }
             else {
