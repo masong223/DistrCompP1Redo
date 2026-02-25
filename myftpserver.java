@@ -4,20 +4,33 @@ import java.net.*;
 
 public class myftpserver {
 public static void main(String[] args) {
-    int port = Integer.parseInt(args[0]);
-    
-    try (ServerSocket serverSocket = new ServerSocket(port)) {
-        System.out.println("Server started on port " + port); //Confirmation message for testing
+        int nport = Integer.parseInt(args[0]);
+        int tport = Integer.parseInt(args[1]);
         
-        while (true) {
-            Socket clientSocket = serverSocket.accept();
-            System.out.println("Client connected"); //Confirmation message for testing
-            new Thread(new Client(clientSocket)).start();
+        try (ServerSocket serverSocket = new ServerSocket(nport)) {
+            System.out.println("Server started on port " + nport); //Confirmation message for testing
+            
+            while (true) {
+                Socket nclientSocket = serverSocket.accept();
+                System.out.println("Client connected"); //Confirmation message for testing
+                new Thread(new Client(nclientSocket)).start();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("Error starting server / accepting client connection");
         }
-    } catch (IOException e) {
-        e.printStackTrace();
-        System.out.println("Error starting server / accepting client connection");
-    }
+        try (ServerSocket serverSocket = new ServerSocket(tport)) {
+            System.out.println("Server started on port " + tport); //Confirmation message for testing
+            
+            while (true) {
+                Socket tclientSocket = serverSocket.accept();
+                System.out.println("Client connected"); //Confirmation message for testing
+                new Thread(new TerminatePort(tclientSocket)).start();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("Error starting server / accepting client connection");
+        }
     }
 }
 
@@ -184,5 +197,32 @@ class Client extends Thread {
     void pwd(DataOutputStream byteOut) throws IOException {
         byteOut.writeUTF(cwd.getCanonicalPath());
         byteOut.flush();
+    }
+}
+
+class TerminatePort extends Thread {
+    private Socket socket;
+
+    public TerminatePort(Socket socket) {
+        this.socket = socket;
+    }
+
+    @Override
+    public void run() {
+        try {
+            InputStream in = socket.getInputStream();
+            DataInputStream dataIn = new DataInputStream(in);
+            System.out.println("Connected to I/O Streams for termination port"); //Testing client connection and stream setup
+            
+            while (true) {
+                String inputToServer = dataIn.readUTF();
+                if (inputToServer.equals("terminate")) {
+                    //terminate the specific command
+                }
+            }
+        } catch (Exception e) {
+            //Only happens when client disconnects
+            System.err.println("Client disconnected from termination port");
+        }
     }
 }
