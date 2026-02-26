@@ -34,7 +34,8 @@ public class myftp {
                 }  else if (inputToServer.startsWith("get")) {
                     nOut.writeUTF(inputToServer); // maybe
                     nOut.flush();
-                    String commandIdFromServer = nIn.readUTF(); //GETS COMMAND ID FROM SERVER BEFORE RESPONDING TO COMMAND
+                    int commandIdFromServer = nIn.readInt(); //GETS COMMAND ID FROM SERVER BEFORE RESPONDING TO COMMAND
+                    System.out.println(commandIdFromServer); // Testing response from server
 
                     String serverResponse = nIn.readUTF();
                     if (serverResponse.equals("File does not exist")) {
@@ -71,7 +72,8 @@ public class myftp {
                     } // file exists
                     nOut.writeUTF(inputToServer);
                     nOut.flush();
-                    String commandIdFromServer = nIn.readUTF(); //GETS COMMAND ID FROM SERVER BEFORE RESPONDING TO COMMAND
+                    int commandIdFromServer = nIn.readInt(); //GETS COMMAND ID FROM SERVER BEFORE RESPONDING TO COMMAND
+                    System.out.println(commandIdFromServer); // Testing response from server
                     
                     nOut.writeLong(fileToSend.length());
                     nOut.flush();
