@@ -25,11 +25,17 @@ public class myftp {
                     tsocket.close();
                     scanner.close();
                     break;
-                } else if (inputToServer.startsWith("terminate")){
-                    //terminate command 
+                } else if (inputToServer.equals("terminate")) {
+                    //terminate command uses the tport
+                    tOut.writeUTF(inputToServer);
+                    tOut.flush();
+                    String responseFromServer = tIn.readUTF();
+                    System.out.println(responseFromServer);
                 }  else if (inputToServer.startsWith("get")) {
                     nOut.writeUTF(inputToServer); // maybe
                     nOut.flush();
+                    String commandIdFromServer = nIn.readUTF(); //GETS COMMAND ID FROM SERVER BEFORE RESPONDING TO COMMAND
+
                     String serverResponse = nIn.readUTF();
                     if (serverResponse.equals("File does not exist")) {
                         System.out.println(serverResponse);
@@ -65,6 +71,8 @@ public class myftp {
                     } // file exists
                     nOut.writeUTF(inputToServer);
                     nOut.flush();
+                    String commandIdFromServer = nIn.readUTF(); //GETS COMMAND ID FROM SERVER BEFORE RESPONDING TO COMMAND
+                    
                     nOut.writeLong(fileToSend.length());
                     nOut.flush();
                     try (FileInputStream fileIn = new FileInputStream(fileName)) {
