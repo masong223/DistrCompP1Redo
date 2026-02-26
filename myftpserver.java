@@ -1,6 +1,5 @@
 import java.io.*;
 import java.net.*;
-import java.util.HashMap;
 
 public class myftpserver {
 public static void main(String[] args) {
@@ -60,38 +59,16 @@ class Client extends Thread {
                 String commandFromUser = dataIn.readUTF(); //Reads command from client
                 String[] commandParts = commandFromUser.split(" "); //Splits command into parts (on whitespace) so we can get command and args
                 String command = commandParts[0]; //Gets command from user input
-
-                if (command.equals("get")) {
-                    int currentID = Globals.id;
-                    byteOut.writeInt(currentID); //sends client ID
-                    Globals.commands.put(currentID, new Globals.CommandStatus()); //Adds command to hashmap with unique id and status of running
-                    synchronized(Globals.lock) {
-                        Globals.id++;
-                    }
-                    get(byteOut, commandParts[1]);
-                    Globals.commands.get(currentID).status = false; //Changes status to false after command finishes
-                    //Passes arg (file to get) to get
-                } else if (command.equals("put")) {
-                    int currentID = Globals.id;
-                    byteOut.writeInt(currentID); //sends client ID
-                    Globals.commands.put(currentID, new Globals.CommandStatus()); //Adds command to hashmap with unique id and status of running
-                    synchronized(Globals.lock) {
-                        Globals.id++;
-                    }
-                    put(byteOut, dataIn, commandParts[1]); //Passes input and output streams to put so it can read file data from client and write file data to client
-                    Globals.commands.get(currentID).status = false; //Changes status to false after command finishes
-                } else if (command.equals("delete")) {
-                    delete(commandParts[1], byteOut); //Passes arg (file to delete) to delete
-                } else if (command.equals("ls")) {
-                    ls(byteOut);
-                } else if (command.equals("cd")) {
-                    cd(commandParts[1], byteOut); //Passes arg (directory) to cd
-                } else if (command.equals("mkdir")) {
-                    mkdir(commandParts[1], byteOut); //Passes arg (directory) to mkdir
-                } else if (command.equals("pwd")) {
-                    pwd(byteOut);
+                if (commandFromUser.endsWith("&")) {
+                    new Thread(() -> {
+                        try {
+                            processString(command, commandParts, byteOut, dataIn);
+                        } catch (IOException e) {
+                            System.out.println("Error processing command");
+                        }
+                    }).start();
                 } else {
-                    byteOut.writeUTF("Invalid command");
+                    processString(command, commandParts, byteOut, dataIn);
                 }
             }
         } catch (Exception e) {
@@ -214,6 +191,45 @@ class Client extends Thread {
     void pwd(DataOutputStream byteOut) throws IOException {
         byteOut.writeUTF(cwd.getCanonicalPath());
         byteOut.flush();
+    }
+
+    private void processString(String command, String[] commandParts, DataOutputStream byteOut, DataInputStream dataIn) throws IOException {
+        if (command.endsWith("&")) {
+            command = command.substring(0, command.length() - 1); //Removes & from end of command for processing
+        }
+        command = command.strip();
+        if (command.equals("get")) {
+                int currentID = Globals.id;
+                byteOut.writeInt(currentID); //sends client ID
+                Globals.commands.put(currentID, new Globals.CommandStatus()); //Adds command to hashmap with unique id and status of running
+                synchronized(Globals.lock) {
+                    Globals.id++;
+                }
+                get(byteOut, commandParts[1]);
+                Globals.commands.get(currentID).status = false; //Changes status to false after command finishes
+                //Passes arg (file to get) to get
+            } else if (command.equals("put")) {
+                int currentID = Globals.id;
+                byteOut.writeInt(currentID); //sends client ID
+                Globals.commands.put(currentID, new Globals.CommandStatus()); //Adds command to hashmap with unique id and status of running
+                synchronized(Globals.lock) {
+                    Globals.id++;
+                }
+                put(byteOut, dataIn, commandParts[1]); //Passes input and output streams to put so it can read file data from client and write file data to client
+                Globals.commands.get(currentID).status = false; //Changes status to false after command finishes
+            } else if (command.equals("delete")) {
+                delete(commandParts[1], byteOut); //Passes arg (file to delete) to delete
+            } else if (command.equals("ls")) {
+                ls(byteOut);
+            } else if (command.equals("cd")) {
+                cd(commandParts[1], byteOut); //Passes arg (directory) to cd
+            } else if (command.equals("mkdir")) {
+                mkdir(commandParts[1], byteOut); //Passes arg (directory) to mkdir
+            } else if (command.equals("pwd")) {
+                pwd(byteOut);
+            } else {
+                byteOut.writeUTF("Invalid command");                
+            }
     }
 }
 
