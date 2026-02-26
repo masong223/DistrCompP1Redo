@@ -1,6 +1,11 @@
 import java.io.*;
 import java.net.*;
+import java.util.HashMap;
 
+private static final HashMap<Integer, CommandStatus> commands = new HashMap<>();
+//true = running, false = terminated/finished
+private static int id = 0;
+private static final Object lock = new Object(); //Lock for synchronizing access to commands hashmap and id variable
 
 public class myftpserver {
 public static void main(String[] args) {
@@ -60,9 +65,24 @@ class Client extends Thread {
                 String command = commandParts[0]; //Gets command from user input
 
                 if (command.equals("get")) {
-                    get(byteOut, commandParts[1]); //Passes arg (file to get) to get
+                    int currentID = id;
+                    byteOut.writeInt(currentID); //sends client ID
+                    commands.put(currentID, new CommandStatus()); //Adds command to hashmap with unique id and status of running
+                    synchronized(lock) {
+                        id++;
+                    }
+                    get(byteOut, commandParts[1]);
+                    commands.get(currentID).status = false; //Changes status to false after command finishes
+                    //Passes arg (file to get) to get
                 } else if (command.equals("put")) {
+                    int currentID = id;
+                    byteOut.writeInt(currentID); //sends client ID
+                    commands.put(currentID, new CommandStatus()); //Adds command to hashmap with unique id and status of running
+                    synchronized(lock) {
+                        id++;
+                    }
                     put(byteOut, dataIn, commandParts[1]); //Passes input and output streams to put so it can read file data from client and write file data to client
+                    commands.get(currentID).status = false; //Changes status to false after command finishes
                 } else if (command.equals("delete")) {
                     delete(commandParts[1], byteOut); //Passes arg (file to delete) to delete
                 } else if (command.equals("ls")) {
@@ -224,5 +244,13 @@ class TerminatePort extends Thread {
             //Only happens when client disconnects
             System.err.println("Client disconnected from termination port");
         }
+    }
+}
+
+class CommandStatus {
+    private volatile boolean status;
+
+    public CommandStatus() {
+        this.status = true; // true means command is running, false means command is terminated
     }
 }
