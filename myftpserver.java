@@ -276,7 +276,7 @@ class TerminatePort extends Thread {
             
             while (true) {
                 String inputToServer = dataIn.readUTF();
-                if (inputToServer.equals("terminate")) {
+                if (inputToServer.startsWith("terminate")) {
                     //terminate the specific command
                     String[] commandParts = inputToServer.split(" ");
                     int terminateID = Integer.parseInt(commandParts[1]);
