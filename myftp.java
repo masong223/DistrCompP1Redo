@@ -27,18 +27,17 @@ public class myftp {
                             Socket tempSocket = new Socket(machineName, nport);
                             DataInputStream tempNIn = new DataInputStream(tempSocket.getInputStream());
                             DataOutputStream tempNOut = new DataOutputStream(tempSocket.getOutputStream());
-                        processString(tempSocket, tsocket, tempNIn, tempNOut, tIn, tOut, ToServer, scanner);
-                        tempSocket.close();
+                            processString(tempSocket, tsocket, tempNIn, tempNOut, tIn, tOut, ToServer, scanner);
+                            tempSocket.close();
                         
                     } catch (IOException e) {
                         System.out.println("Error processing command in background thread");
                     }}).start();
-                    System.out.print("myftp> ");
                     continue;
                 } else {
                     processString(nsocket, tsocket, nIn, nOut, tIn, tOut, inputToServer, scanner);
-                    System.out.print("myftp> ");
                 }
+                System.out.print("myftp> ");
             }
         } catch (IOException e) {
             System.out.println("Error connecting to server");
