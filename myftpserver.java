@@ -70,7 +70,7 @@ class Client extends Thread {
         }
     }
 
-    void get(DataOutputStream byteOut, String filename) throws IOException{
+    void get(DataOutputStream byteOut, String filename, int commandID) throws IOException{
         File fileToSend = new File (cwd, filename);
         if (!fileToSend.exists()) {
             byteOut.writeUTF("File does not exist");
@@ -86,8 +86,16 @@ class Client extends Thread {
         int size = (int) fileSize;
         byte[] payload = new byte[1000]; 
 
-        try (FileInputStream fileIn = new FileInputStream(fileToSend)) {         
+        Globals.lockFile(fileToSend.getCanonicalPath());
+
+        try (FileInputStream fileIn = new FileInputStream(fileToSend)) {   
+            
             while (size > 0) {
+                //If user terminates command, check status and break if false.
+                if (Globals.commands.get(commandID).status == false) {
+                    break;
+                }
+
                int bytesRead = fileIn.read(payload, 0, Math.min(size, 1000));  // reading between 1000 and bytes left in file          
               if (bytesRead == -1) {
                     break;
@@ -99,19 +107,30 @@ class Client extends Thread {
         } catch (IOException e) {
             byteOut.writeUTF("Error when turning file into byte array");
             byteOut.flush();
+        } finally {
+            Globals.unlockFile(fileToSend.getCanonicalPath());
         }
 
     }
 
-    void put(DataOutputStream byteOut, DataInputStream byteIn, String fileName) throws IOException {
+    void put(DataOutputStream byteOut, DataInputStream byteIn, String fileName, int commandID) throws IOException {
         System.out.println("Put command received"); //Testing put command
         long fileSize = byteIn.readLong();
         System.out.println(fileSize);
         File fileToWrite = new File(cwd, fileName);
         byte[] payLoad = new byte [1000];
 
+        Globals.lockFile(fileToWrite.getCanonicalPath()); //Prevents threads from using file
+
         try (FileOutputStream fileOut = new FileOutputStream(fileToWrite)) {
             while (fileSize > 0) {
+                //If user wants to terminate command, check status, delete file, and break if false.
+                if (Globals.commands.get(commandID).status == false) {
+                    fileOut.close();
+                    fileToWrite.delete(); //Deletes file on server side
+                    break;
+                }
+                
                 int bytesToRead = (int) Math.min((int)fileSize, 1000);
                 byteIn.readFully(payLoad, 0 , bytesToRead);
                 fileOut.write(payLoad, 0, bytesToRead);
@@ -120,6 +139,8 @@ class Client extends Thread {
             }
          } catch (IOException e) {
             System.out.println("Server error creating file");
+        } finally {
+            Globals.unlockFile(fileToWrite.getCanonicalPath()); //Lets other threads use file
         }
     }
 
@@ -200,23 +221,28 @@ class Client extends Thread {
 
     private void processString(String command, String[] commandParts, DataOutputStream byteOut, DataInputStream dataIn) throws IOException {
         if (command.equals("get")) {
-                int currentID = Globals.id;
-                byteOut.writeInt(currentID); //sends client ID
-                Globals.commands.put(currentID, new Globals.CommandStatus()); //Adds command to hashmap with unique id and status of running
+                int currentID;
+                
+                 //Adds command to hashmap with unique id and status of running
                 synchronized(Globals.lock) {
                     Globals.id++;
+                    currentID = Globals.id;
+                    Globals.commands.put(currentID, new Globals.CommandStatus());
                 }
-                get(byteOut, commandParts[1]);
+                byteOut.writeInt(currentID); //sends client ID
+                get(byteOut, commandParts[1], currentID);
                 Globals.commands.get(currentID).status = false; //Changes status to false after command finishes
                 //Passes arg (file to get) to get
             } else if (command.equals("put")) {
-                int currentID = Globals.id;
-                byteOut.writeInt(currentID); //sends client ID
-                Globals.commands.put(currentID, new Globals.CommandStatus()); //Adds command to hashmap with unique id and status of running
+                int currentID;
+                
                 synchronized(Globals.lock) {
                     Globals.id++;
+                    currentID = Globals.id;
+                    Globals.commands.put(currentID, new Globals.CommandStatus()); //Puts command in hashmap
                 }
-                put(byteOut, dataIn, commandParts[1]); //Passes input and output streams to put so it can read file data from client and write file data to client
+                byteOut.writeInt(currentID); //sends client ID
+                put(byteOut, dataIn, commandParts[1], currentID); //Passes input and output streams to put so it can read file data from client and write file data to client
                 Globals.commands.get(currentID).status = false; //Changes status to false after command finishes
             } else if (command.equals("delete")) {
                 delete(commandParts[1], byteOut); //Passes arg (file to delete) to delete

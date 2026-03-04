@@ -16,10 +16,10 @@ public class Globals{
     public static final Object lock = new Object(); //Lock for synchronizing access to commands hashmap and id variable
 
     //Removes race conditions by ensuring that only one thread can access the file at a time
-    public synchronized void lockFile(String filename) {
+    public static synchronized void lockFile(String filename) {
         while (filesInUse.contains(filename)) { //Checks if the desired file is currently being used by another thread
             try {
-                wait(); //If it is, wait until it becomes available
+                Globals.class.wait(); //If it is, wait until it becomes available
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
@@ -28,8 +28,8 @@ public class Globals{
     }
 
     //Allows other threads to access this file once the current thread is finished
-    public synchronized void unlockFile(String filename) {
+    public static synchronized void unlockFile(String filename) {
         filesInUse.remove(filename); //Make the file available to threads
-        notifyAll(); //Notify any waiting threads that a file has been unlocked, threads come out of wait to try and get it
+        Globals.class.notifyAll(); //Notify any waiting threads that a file has been unlocked, threads come out of wait to try and get it
     }
 }

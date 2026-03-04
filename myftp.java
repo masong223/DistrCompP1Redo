@@ -43,10 +43,6 @@ public class myftp {
             nsocket.close();
             tsocket.close();
             scanner.close();
-        } else if (inputToServer.endsWith("&")) {
-            inputToServer = inputToServer.substring(0, inputToServer.length() - 1);
-            nOut.writeUTF(inputToServer);
-            nOut.flush();
         } else if (inputToServer.equals("terminate")) {
             // terminate command uses the tport
             tOut.writeUTF(inputToServer);
