@@ -76,7 +76,7 @@ public class myftp {
             // Testing file path for get command
             try (FileOutputStream fileOut = new FileOutputStream(filename)) {
                 while (fileSize > 0) {
-                    if (nIn.readUTF().equals("Terminated")) {
+                    if (tIn.readUTF().startsWith("Terminated")) {
                         System.out.println("File transfer terminated by user");
                         fileOut.close();
                         new File(filename).delete();
