@@ -25,7 +25,7 @@ public class myftp {
                     tsocket.close();
                     scanner.close();
                     break;
-                } else if (inputToServer.equals("terminate")) {
+                } else if (inputToServer.startsWith("terminate")) {
                     //terminate command uses the tport
                     tOut.writeUTF(inputToServer);
                     tOut.flush();
