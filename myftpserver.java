@@ -76,6 +76,7 @@ class Client extends Thread {
             System.err.println("Client disconnected");
         }
     }
+
     void get(DataOutputStream byteOut, String filename) throws IOException{
         File fileToSend = new File (cwd, filename);
         if (!fileToSend.exists()) {
@@ -90,12 +91,18 @@ class Client extends Thread {
         long fileSize = fileToSend.length();
         byteOut.writeLong(fileSize); // file size
         int size = (int) fileSize;
-        byte[] payload = new byte[size]; 
+        byte[] payload = new byte[1000]; 
 
         try (FileInputStream fileIn = new FileInputStream(fileToSend)) {         
-            fileIn.read(payload);
-            byteOut.write(payload);
-            byteOut.flush();
+            while (size > 0) {
+               int bytesRead = fileIn.read(payload, 0, Math.min(size, 1000));  // reading between 1000 and bytes left in file          
+              if (bytesRead == -1) {
+                    break;
+                }
+                byteOut.write(payload, 0, bytesRead); 
+                byteOut.flush();
+                size = size - bytesRead;
+            }    
         } catch (IOException e) {
             byteOut.writeUTF("Error when turning file into byte array");
             byteOut.flush();
@@ -108,12 +115,17 @@ class Client extends Thread {
         long fileSize = byteIn.readLong();
         System.out.println(fileSize);
         File fileToWrite = new File(cwd, fileName);
+        byte[] payLoad = new byte [1000];
+
         try (FileOutputStream fileOut = new FileOutputStream(fileToWrite)) {
-            byte[] payLoad = new byte [(int) fileSize];
-            byteIn.readFully(payLoad);
-            fileOut.write(payLoad);
-            fileOut.flush();
-        } catch (IOException e) {
+            while (fileSize > 0) {
+                int bytesToRead = (int) Math.min((int)fileSize, 1000);
+                byteIn.readFully(payLoad, 0 , bytesToRead);
+                fileOut.write(payLoad, 0, bytesToRead);
+                fileOut.flush();
+                fileSize = fileSize - bytesToRead;
+            }
+         } catch (IOException e) {
             System.out.println("Server error creating file");
         }
     }

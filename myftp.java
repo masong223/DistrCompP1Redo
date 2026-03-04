@@ -47,25 +47,29 @@ public class myftp {
 
                     long fileSize = nIn.readLong(); // file size
                     System.out.println(fileSize);
-
+                    byte[] payload = new byte[1000];
+                        
                     // Testing file path for get command
                     try (FileOutputStream fileOut = new FileOutputStream(filename)) {
-                        byte[] payload = new byte[(int) fileSize];
-                        nIn.readFully(payload); // getting data from server
+                        while (fileSize > 0) {
+                            int bytesToRead = (int) Math.min(fileSize, payload.length);
+                            nIn.readFully(payload, 0, bytesToRead); // getting data from server
+                            fileOut.write(payload, 0, bytesToRead); // writing data to file
+                            fileSize -= bytesToRead;
+                        }
 
-                        fileOut.write(payload); // writing data to file
                         fileOut.flush();
 
                     } catch (IOException e) {
                         System.out.println("Error writing file ");
-                    }
+                    } // get 
                 } else if (inputToServer.startsWith("put")) {
                     System.out.println(inputToServer);
                     String[] commandParts = inputToServer.split(" ");
                     String fileName = commandParts[1];
 
                     File fileToSend = new File(fileName);
-
+                    long fileSize = fileToSend.length();
                     if (!fileToSend.exists()) {
                         System.out.println("File does not exist");
                         continue;
@@ -77,11 +81,19 @@ public class myftp {
                     
                     nOut.writeLong(fileToSend.length());
                     nOut.flush();
+                    byte[] payLoad = new byte[1000];
+                       
                     try (FileInputStream fileIn = new FileInputStream(fileName)) {
-                        byte[] payLoad = new byte[(int) fileToSend.length()];
-                        fileIn.read(payLoad);
-                        nOut.write(payLoad);
-                        nOut.flush();
+                        while (fileSize > 0) {
+                            int bytesToRead = (int) Math.min(payLoad.length, fileSize);  
+                            int bytesRead =  fileIn.read(payLoad, 0, bytesToRead); // reading data from file
+                            if (bytesRead == -1) {
+                                break; // End of file reached
+                            }
+                            nOut.write(payLoad, 0, bytesToRead); // sending data to server
+                            nOut.flush();
+                            fileSize -= bytesRead;
+                        }
                     } catch (IOException e) {
                         System.out.println("Error client reading file");
                     }
