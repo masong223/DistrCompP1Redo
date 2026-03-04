@@ -23,12 +23,17 @@ public class myftp {
                 if (inputToServer.endsWith("&")) {
                     String ToServer = inputToServer.substring(0, inputToServer.length() - 1).strip();
                     new Thread(() -> {
-                        try {
-                        processString(nsocket, tsocket, nIn, nOut, tIn, tOut, ToServer, scanner);
-                        System.out.print("myftp> ");
+                        try{
+                            Socket tempSocket = new Socket(machineName, nport);
+                            DataInputStream tempNIn = new DataInputStream(tempSocket.getInputStream());
+                            DataOutputStream tempNOut = new DataOutputStream(tempSocket.getOutputStream());
+                        processString(tempSocket, tsocket, tempNIn, tempNOut, tIn, tOut, ToServer, scanner);
+                        tempSocket.close();
+                        
                     } catch (IOException e) {
                         System.out.println("Error processing command in background thread");
                     }}).start();
+                    System.out.print("myftp> ");
                     continue;
                 } else {
                     processString(nsocket, tsocket, nIn, nOut, tIn, tOut, inputToServer, scanner);

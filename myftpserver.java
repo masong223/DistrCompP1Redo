@@ -272,6 +272,8 @@ class TerminatePort extends Thread {
         try {
             InputStream in = socket.getInputStream();
             DataInputStream dataIn = new DataInputStream(in);
+            OutputStream out = socket.getOutputStream();
+            DataOutputStream dataOut = new DataOutputStream(out);
             System.out.println("Connected to I/O Streams for termination port"); //Testing client connection and stream setup
             
             while (true) {
@@ -285,6 +287,8 @@ class TerminatePort extends Thread {
                             Globals.commands.get(terminateID).status = false; //Changes status of command to false
                         }
                     }
+                    dataOut.writeUTF("Terminated command:" + terminateID);
+                    dataOut.flush();
                 }
             }
         } catch (Exception e) {
