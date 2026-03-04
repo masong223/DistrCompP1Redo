@@ -49,7 +49,7 @@ class Client extends Thread {
     public void run() {
         try {
             InputStream in = socket.getInputStream();
-            DataInputStream dataIn = new DataInputStream(in); //Allows for easy reading of files without buffer issues
+            DataInputStream dataIn = new DataInputStream(in); //Allows for easy reading of files without buffer issues   
             OutputStream out = socket.getOutputStream();
             DataOutputStream byteOut = new DataOutputStream(out);
             System.out.println("Connected to I/O Streams"); //Testing client connection and stream setup
@@ -57,19 +57,12 @@ class Client extends Thread {
             
             while (true) {
                 String commandFromUser = dataIn.readUTF(); //Reads command from client
+                if (commandFromUser.endsWith("&")) {
+                    commandFromUser = commandFromUser.substring(0, commandFromUser.length() - 1); //Removes & from end of command for processing
+                }
                 String[] commandParts = commandFromUser.split(" "); //Splits command into parts (on whitespace) so we can get command and args
                 String command = commandParts[0]; //Gets command from user input
-                if (commandFromUser.endsWith("&")) {
-                    new Thread(() -> {
-                        try {
-                            processString(command, commandParts, byteOut, dataIn);
-                        } catch (IOException e) {
-                            System.out.println("Error processing command");
-                        }
-                    }).start();
-                } else {
-                    processString(command, commandParts, byteOut, dataIn);
-                }
+                processString(command, commandParts, byteOut, dataIn);
             }
         } catch (Exception e) {
             //Only happens when client disconnects
@@ -206,10 +199,6 @@ class Client extends Thread {
     }
 
     private void processString(String command, String[] commandParts, DataOutputStream byteOut, DataInputStream dataIn) throws IOException {
-        if (command.endsWith("&")) {
-            command = command.substring(0, command.length() - 1); //Removes & from end of command for processing
-        }
-        command = command.strip();
         if (command.equals("get")) {
                 int currentID = Globals.id;
                 byteOut.writeInt(currentID); //sends client ID
