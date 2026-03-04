@@ -76,6 +76,12 @@ public class myftp {
             // Testing file path for get command
             try (FileOutputStream fileOut = new FileOutputStream(filename)) {
                 while (fileSize > 0) {
+                    if (nIn.readUTF().equals("Terminated")) {
+                        System.out.println("File transfer terminated by user");
+                        fileOut.close();
+                        new File(filename).delete();
+                        return;
+                    }
                     int bytesToRead = (int) Math.min(fileSize, payload.length);
                     nIn.readFully(payload, 0, bytesToRead); // getting data from server
                     fileOut.write(payload, 0, bytesToRead); // writing data to file
