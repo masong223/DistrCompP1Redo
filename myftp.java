@@ -58,6 +58,7 @@ public class myftp {
             String serverResponse = nIn.readUTF();
             if (serverResponse.equals("File does not exist")) {
                 System.out.println(serverResponse);
+                return;
             }
             String filename = serverResponse; // file name if it exists
             System.out.println(filename); // Testing response from server
@@ -89,6 +90,7 @@ public class myftp {
             long fileSize = fileToSend.length();
             if (!fileToSend.exists()) {
                 System.out.println("File does not exist");
+                return;
             } // file exists
             nOut.writeUTF(inputToServer);
             nOut.flush();
