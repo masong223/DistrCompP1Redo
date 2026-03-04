@@ -278,6 +278,13 @@ class TerminatePort extends Thread {
                 String inputToServer = dataIn.readUTF();
                 if (inputToServer.equals("terminate")) {
                     //terminate the specific command
+                    String[] commandParts = inputToServer.split(" ");
+                    int terminateID = Integer.parseInt(commandParts[1]);
+                    synchronized(Globals.lock) {
+                        if (Globals.commands.containsKey(terminateID)) {
+                            Globals.commands.get(terminateID).status = false; //Changes status of command to false
+                        }
+                    }
                 }
             }
         } catch (Exception e) {
