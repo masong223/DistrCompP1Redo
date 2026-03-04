@@ -232,23 +232,27 @@ class Client extends Thread {
         }
         command = command.strip();
         if (command.equals("get")) {
-                int currentID = Globals.id;
-                byteOut.writeInt(currentID); //sends client ID
+                int currentID;
+                
                  //Adds command to hashmap with unique id and status of running
                 synchronized(Globals.lock) {
                     Globals.id++;
+                    currentID = Globals.id;
                     Globals.commands.put(currentID, new Globals.CommandStatus());
                 }
+                byteOut.writeInt(currentID); //sends client ID
                 get(byteOut, commandParts[1], currentID);
                 Globals.commands.get(currentID).status = false; //Changes status to false after command finishes
                 //Passes arg (file to get) to get
             } else if (command.equals("put")) {
-                int currentID = Globals.id;
-                byteOut.writeInt(currentID); //sends client ID
+                int currentID;
+                
                 synchronized(Globals.lock) {
                     Globals.id++;
+                    currentID = Globals.id;
                     Globals.commands.put(currentID, new Globals.CommandStatus()); //Puts command in hashmap
                 }
+                byteOut.writeInt(currentID); //sends client ID
                 put(byteOut, dataIn, commandParts[1], currentID); //Passes input and output streams to put so it can read file data from client and write file data to client
                 Globals.commands.get(currentID).status = false; //Changes status to false after command finishes
             } else if (command.equals("delete")) {
