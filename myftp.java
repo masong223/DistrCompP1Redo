@@ -17,21 +17,23 @@ public class myftp {
             DataOutputStream tOut = new DataOutputStream(tsocket.getOutputStream());
             System.out.println("Connected to server and established I/O"); // Testing connection to server
             Scanner scanner = new Scanner(System.in);
+            System.out.print("myftp> ");
             while (true) {
-                System.out.print("myftp> ");
                 String inputToServer = scanner.nextLine();
                 if (inputToServer.endsWith("&")) {
                     String ToServer = inputToServer.substring(0, inputToServer.length() - 1).strip();
                     new Thread(() -> {
                         try {
                         processString(nsocket, tsocket, nIn, nOut, tIn, tOut, ToServer, scanner);
+                        System.out.print("myftp> ");
                     } catch (IOException e) {
                         System.out.println("Error processing command in background thread");
-                    }
-                    }).start();
+                    }}).start();
                     continue;
+                } else {
+                    processString(nsocket, tsocket, nIn, nOut, tIn, tOut, inputToServer, scanner);
+                    System.out.print("myftp> ");
                 }
-                processString(nsocket, tsocket, nIn, nOut, tIn, tOut, inputToServer, scanner);
             }
         } catch (IOException e) {
             System.out.println("Error connecting to server");
