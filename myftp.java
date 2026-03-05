@@ -31,6 +31,8 @@ public class myftp {
                             DataOutputStream tempNOut = new DataOutputStream(tempSocket.getOutputStream());
                             processString(tempSocket, tsocket, tempNIn, tempNOut, tIn, tOut, ToServer, scanner);
                             tempSocket.close();
+                            System.out.println();
+                            System.out.print("myftp> ");
                         
                     } catch (IOException e) {
                         System.out.println("Error processing command in background thread");
