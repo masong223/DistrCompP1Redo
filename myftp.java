@@ -49,6 +49,7 @@ public class myftp {
             nsocket.close();
             tsocket.close();
             scanner.close();
+            System.exit(0); //Attempt at a clean exit
         } else if (inputToServer.startsWith("terminate")) {
             // terminate command uses the tport
             tOut.writeUTF(inputToServer);
@@ -76,12 +77,6 @@ public class myftp {
             // Testing file path for get command
             try (FileOutputStream fileOut = new FileOutputStream(filename)) {
                 while (fileSize > 0) {
-                    if (tIn.readUTF().startsWith("Terminated")) {
-                        System.out.println("File transfer terminated by user");
-                        fileOut.close();
-                        new File(filename).delete();
-                        return;
-                    }
                     int bytesToRead = (int) Math.min(fileSize, payload.length);
                     nIn.readFully(payload, 0, bytesToRead); // getting data from server
                     fileOut.write(payload, 0, bytesToRead); // writing data to file
@@ -91,6 +86,15 @@ public class myftp {
                 fileOut.flush();
 
             } catch (IOException e) {
+                //If an error occurs while getting file, it is probably due to terminate
+                if (fileSize >0) {
+                    System.out.println("File get terminated");
+                    new File(filename).delete();
+                    return;
+                } else {
+                    System.err.println("Error writing file");
+
+                }
                 System.out.println("Error writing file ");
             } // get
         } else if (inputToServer.startsWith("put")) {

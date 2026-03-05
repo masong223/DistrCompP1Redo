@@ -93,8 +93,7 @@ class Client extends Thread {
             while (size > 0) {
                 //If user terminates command, check status and break if false.
                 if (Globals.commands.get(commandID).status == false) {
-                    byteOut.writeUTF("Terminated");
-                    byteOut.flush();
+                    socket.close(); //Temp solution to try to fix client hangs
                     break;
                 }
 
