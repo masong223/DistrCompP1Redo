@@ -9,21 +9,23 @@ public class myftp {
         int tport = Integer.parseInt(args[2]);
 
         try {
+            //Opens all connections to server
             Socket nsocket = new Socket(machineName, nport);
             Socket tsocket = new Socket(machineName, tport);
             DataInputStream nIn = new DataInputStream(nsocket.getInputStream());
             DataOutputStream nOut = new DataOutputStream(nsocket.getOutputStream());
             DataInputStream tIn = new DataInputStream(tsocket.getInputStream());
             DataOutputStream tOut = new DataOutputStream(tsocket.getOutputStream());
-            System.out.println("Connected to server and established I/O"); // Testing connection to server
+            System.out.println("Connected to server and established I/O"); // Testing message connection to server
             Scanner scanner = new Scanner(System.in);
             System.out.print("myftp> ");
             while (true) {
                 String inputToServer = scanner.nextLine();
+                //Starts it on a background thread with a new socket so we can continue to use the main socket for other commands
                 if (inputToServer.endsWith("&")) {
                     String ToServer = inputToServer.substring(0, inputToServer.length() - 1).strip();
                     new Thread(() -> {
-                        try{
+                        try {
                             Socket tempSocket = new Socket(machineName, nport);
                             DataInputStream tempNIn = new DataInputStream(tempSocket.getInputStream());
                             DataOutputStream tempNOut = new DataOutputStream(tempSocket.getOutputStream());
@@ -86,8 +88,8 @@ public class myftp {
                 fileOut.flush();
 
             } catch (IOException e) {
-                //If an error occurs while getting file, it is probably due to terminate
-                if (fileSize >0) {
+                //If an error occurs while getting file, it is probably due to terminate (CHECK SERVER "GET" CODE FOR DETAILS). Easiest way without giving client access to Globals (it probably shouldnt have access to it)
+                if (fileSize > 0) {
                     System.out.println("File get terminated");
                     new File(filename).delete();
                     return;

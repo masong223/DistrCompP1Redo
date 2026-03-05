@@ -6,6 +6,7 @@ public static void main(String[] args) {
         int nport = Integer.parseInt(args[0]);
         int tport = Integer.parseInt(args[1]);
         
+        //Starts bother servers on different threads so we can run them at the same time (not stuck on while(true) loop for one socket)
         new Thread(() -> {
             try (ServerSocket serverSocket = new ServerSocket(nport)) {
                 System.out.println("Server started on port " + nport); //Confirmation message for testing
@@ -66,7 +67,7 @@ class Client extends Thread {
             }
         } catch (Exception e) {
             //Only happens when client disconnects
-            System.err.println("Client disconnected");
+            System.err.println("Client disconnected / Temp socket closed (&)");
         }
     }
 
@@ -91,9 +92,16 @@ class Client extends Thread {
         try (FileInputStream fileIn = new FileInputStream(fileToSend)) {   
             
             while (size > 0) {
-                //If user terminates command, check status and break if false.
+                /**
+                 * Solution to try to allow the client to know when a file transfer is terminated without giving them
+                 * access to the Globals class (because the client and server files are theoretically in different places).
+                 * This is only an issue when the client terminates a get, because client is receivign continuous data from server. We can't
+                 * send more stuff through it without the client getting confused.
+                 * Solution is to close the socket on the server side, which would cause an exception to be thrown by the client (which we catch)
+                 * which allows us to delete the file and stop the client infinite hangs
+                 */
                 if (Globals.commands.get(commandID).status == false) {
-                    socket.close(); //Temp solution to try to fix client hangs
+                    socket.close(); 
                     break;
                 }
 
@@ -285,7 +293,7 @@ class TerminatePort extends Thread {
                     int terminateID = Integer.parseInt(commandParts[1]);
                     synchronized(Globals.lock) {
                         if (Globals.commands.containsKey(terminateID)) {
-                            Globals.commands.get(terminateID).status = false; //Changes status of command to false
+                            Globals.commands.get(terminateID).status = false; //Changes status of command to false, show it should be terminated
                         }
                     }
                     dataOut.writeUTF("Terminated command:" + terminateID);
